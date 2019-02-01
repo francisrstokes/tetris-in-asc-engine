@@ -374,18 +374,6 @@ exports.vDist = vDist;
 exports.vDot = vDot;
 exports.vDet = vDet;
 /* end exports */
-},{}],"node_modules/asc-engine/src/constants.js":[function(require,module,exports) {
-const LAYERS = Object.freeze({
-  HUD: 0,
-  BG : 1,
-  MG : 2,
-  FG : 3
-});
-
-module.exports = Object.freeze({
-  LAYERS
-});
-
 },{}],"node_modules/asc-engine/src/util.js":[function(require,module,exports) {
 const posToGridIndex = ([x, y], gw) => {
   return x + gw * y;
@@ -410,7 +398,450 @@ module.exports = {
   fromify
 };
 
-},{}],"node_modules/asc-engine/src/GameState.js":[function(require,module,exports) {
+},{}],"node_modules/asc-engine/src/constants.js":[function(require,module,exports) {
+const LAYERS = Object.freeze({
+  HUD: 0,
+  BG : 1,
+  MG : 2,
+  FG : 3
+});
+
+module.exports = Object.freeze({
+  LAYERS
+});
+
+},{}],"node_modules/asc-engine/src/Tile.js":[function(require,module,exports) {
+const {fromify} = require('./util');
+const {LAYERS} = require('./constants');
+
+class Tile {
+  constructor(char, color, zPos = LAYERS.BG) {
+    this.char = char;
+    this.color = color;
+    this.zPos = zPos;
+    this.properties = [];
+  }
+
+  hasProperty(prop) {
+    return this.properties.includes(prop);
+  }
+
+  addProperty(prop) {
+    this.properties.push(prop);
+    return this;
+  }
+}
+
+Tile.from = fromify(Tile);
+
+module.exports = Tile;
+
+},{"./util":"node_modules/asc-engine/src/util.js","./constants":"node_modules/asc-engine/src/constants.js"}],"node_modules/asc-engine/src/AnimatedTile.js":[function(require,module,exports) {
+const Tile = require('./Tile');
+const {fromify} = require('./util');
+
+class AnimatedTile extends Tile {
+  constructor(timeline, animationLength) {
+    super(timeline[0].char, timeline[0].color, timeline[0].zPos);
+    this.timeline = timeline;
+    this.animationLength = animationLength;
+    this.frame = 0;
+  }
+
+  update() {
+    const i = Math.floor(this.frame / (this.animationLength / (this.timeline.length)));
+    this.char = this.timeline[i].char;
+    this.color = this.timeline[i].color;
+    this.zPos = this.timeline[i].zPos;
+    this.frame++;
+    if (this.frame >= this.animationLength) {
+      this.frame = 0;
+    }
+  }
+}
+
+AnimatedTile.from = fromify(AnimatedTile);
+
+module.exports = AnimatedTile;
+
+},{"./Tile":"node_modules/asc-engine/src/Tile.js","./util":"node_modules/asc-engine/src/util.js"}],"node_modules/asc-engine/node_modules/vec-la-fp/dist/vec.module.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
+// curry :: (a -> b -> ... -> n) -> (a -> b) -> (b -> ...) -> (... -> n)
+var curry = function curry(fn) {
+  var curried = function curried() {
+    for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+      args[_key] = arguments[_key];
+    }
+
+    if (args.length >= fn.length) {
+      return fn.apply(undefined, args);
+    }
+    return function () {
+      for (var _len2 = arguments.length, argsNext = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+        argsNext[_key2] = arguments[_key2];
+      }
+
+      return curried.apply(undefined, args.concat(argsNext));
+    };
+  };
+  return curried;
+};
+
+// pipe :: (a -> b) -> (b -> ...) -> (... -> n)
+var pipe = function pipe(fn1) {
+  for (var _len3 = arguments.length, functions = Array(_len3 > 1 ? _len3 - 1 : 0), _key3 = 1; _key3 < _len3; _key3++) {
+    functions[_key3 - 1] = arguments[_key3];
+  }
+
+  return function () {
+    return functions.reduce(function (acc, fn) {
+      return fn(acc);
+    }, fn1.apply(undefined, arguments));
+  };
+};
+
+// compose :: (... -> n) -> (b -> ...) -> (a -> b)
+var compose = function compose() {
+  for (var _len4 = arguments.length, functions = Array(_len4), _key4 = 0; _key4 < _len4; _key4++) {
+    functions[_key4] = arguments[_key4];
+  }
+
+  return pipe.apply(undefined, _toConsumableArray(functions.reverse()));
+};
+
+// vAdd :: Vector -> Vector -> Vector
+var vAdd = curry(function (v, v2) {
+  return [v[0] + v2[0], v[1] + v2[1]];
+});
+
+// vAdd3 :: Vector -> Vector -> Vector -> Vector
+var vAdd3 = curry(function (v, v2, v3) {
+  return [v[0] + v2[0] + v3[0], v[1] + v2[1] + v3[1]];
+});
+
+// vAddAll :: [Vector] -> Vector
+var vAddAll = function vAddAll(vs) {
+  return vs.reduce(vAdd, [0, 0]);
+};
+
+// vSub :: Vector -> Vector -> Vector
+var vSub = curry(function (v, v2) {
+  return [v[0] - v2[0], v[1] - v2[1]];
+});
+
+// vSub3 :: Vector -> Vector -> Vector -> Vector
+var vSub3 = curry(function (v, v2, v3) {
+  return [v[0] - v2[0] - v3[0], v[1] - v2[1] - v3[1]];
+});
+
+// vSubAll :: [Vector] -> Vector
+var vSubAll = function vSubAll(vs) {
+  return vs.slice(1).reduce(vSub, vs.slice(0, 1)[0]);
+};
+
+// vMag :: Vector -> Number
+var vMag = function vMag(v) {
+  return Math.sqrt(v[0] * v[0] + v[1] * v[1]);
+};
+
+// vNormal :: Vector -> Vector
+var vNormal = function vNormal(v) {
+  return [-v[1], v[0]];
+};
+
+// vScale :: Number -> Vector
+var vScale = curry(function (sc, v) {
+  return [v[0] * sc, v[1] * sc];
+});
+
+// vTowards :: Number -> Vector -> Vector -> Vector
+var vTowards = curry(function (t, v1, v2) {
+  var d = vSub(v2, v1);
+  var sc = vMag(d) * t;
+  return vAdd(v1, vScale(sc, vNorm(d)));
+});
+
+// vLerp :: Vector -> Vector -> Number -> Vector
+var vLerp = curry(function (v1, v2, t) {
+  return vTowards(t, v1, v2);
+});
+
+// vNorm :: Vector -> Vector
+var vNorm = function vNorm(v) {
+  var mag = vMag(v);
+  return [v[0] / mag, v[1] / mag];
+};
+
+// mId :: Matrix
+var mId = Object.freeze([1, 0, 0, 0, 1, 0, 0, 0, 1]);
+
+// vCreateMatrix :: Number -> Number -> Number -> Number -> Number -> Number -> Matrix
+var vCreateMatrix = function vCreateMatrix() {
+  var a = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 1;
+  var b = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+  var c = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
+  var d = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 1;
+  var tx = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : 0;
+  var ty = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : 0;
+  return [a, c, tx, b, d, ty, 0, 0, 1];
+};
+
+// vTransform :: Matrix -> Vector -> Vector
+var vTransform = curry(function (m, v) {
+  return [v[0] * m[0] + v[1] * m[1] + m[2], v[0] * m[3] + v[1] * m[4] + m[5]];
+});
+
+// mCompose :: Matrix -> Matrix -> Matrix
+var mCompose = curry(function (m, m2) {
+  return [m[0] * m2[0] + m[1] * m2[3] + m[2] * m2[6], m[0] * m2[1] + m[1] * m2[4] + m[2] * m2[7], m[0] * m2[2] + m[1] * m2[5] + m[2] * m2[8], m[3] * m2[0] + m[4] * m2[3] + m[5] * m2[6], m[3] * m2[1] + m[4] * m2[4] + m[5] * m2[7], m[3] * m2[2] + m[4] * m2[5] + m[5] * m2[8], m[6] * m2[0] + m[7] * m2[3] + m[8] * m2[6], m[6] * m2[1] + m[7] * m2[4] + m[8] * m2[7], m[6] * m2[2] + m[7] * m2[5] + m[8] * m2[8]];
+});
+
+// mRotate :: Number -> Matrix -> Matrix
+var mRotate = function mRotate(a) {
+  return mCompose([Math.cos(a), -Math.sin(a), 0, Math.sin(a), Math.cos(a), 0, 0, 0, 1]);
+};
+
+// mTranslate :: Vector -> Matrix -> Matrix
+var mTranslate = function mTranslate(v) {
+  return mCompose([1, 0, v[0], 0, 1, v[1], 0, 0, 1]);
+};
+
+// mScale :: Vector -> Matrix -> Matrix
+var mScale = function mScale(v) {
+  return mCompose([v[0], 0, 0, 0, v[1], 0, 0, 0, 1]);
+};
+
+// mShear :: Vector -> Matrix -> Matrix
+var mShear = function mShear(v) {
+  return mCompose([1, v[0], 0, v[1], 1, 0, 0, 0, 1]);
+};
+
+// vRotate :: Number -> Vector -> Vector
+var vRotate = curry(function (a, v) {
+  return [v[0] * Math.cos(a) - v[1] * Math.sin(a), v[0] * Math.sin(a) + v[1] * Math.cos(a)];
+});
+
+// vRotatePointAround :: Number -> Vector -> Vector -> Vector
+var vRotatePointAround = curry(function (a, cp, v) {
+  var v2 = vSub(v, cp);
+  return vAdd(cp, [v2[0] * Math.cos(a) - v2[1] * Math.sin(a), v2[0] * Math.sin(a) + v2[1] * Math.cos(a)]);
+});
+
+// vMidpoint :: Vector -> Vector -> Vector
+var vMidpoint = curry(function (v, v2) {
+  return vScale(0.5, vAdd(v, v2));
+});
+
+// vAngle :: Number -> Vector
+var vAngle = function vAngle(a) {
+  return [Math.cos(a), Math.sin(a)];
+};
+
+// vAlongAngle :: Number -> Number -> Vector
+var vAlongAngle = curry(function (a, r, v) {
+  return compose(vAdd(v), vScale(r), vAngle)(a);
+});
+
+// vFastDist :: Vector -> Vector -> Number
+var vFastDist = curry(function (v, v2) {
+  return Math.pow(v2[0] - v[0], 2) + Math.pow(v2[1] - v[1], 2);
+});
+
+// vDist :: Vector -> Vector -> Number
+var vDist = curry(function (v, v2) {
+  return Math.hypot(v2[0] - v[0], v2[1] - v[1]);
+});
+
+// vDot :: Vector -> Vector -> Number
+var vDot = curry(function (v, v2) {
+  return v[0] * v2[0] + v[1] * v2[1];
+});
+
+// vDet :: Matrix -> Number
+var vDet = function vDet(m) {
+  return m[0] * m[4] - m[3] * m[1];
+};
+
+var vec = {
+  add: vAdd,
+  add3: vAdd3,
+  addAll: vAddAll,
+  sub: vSub,
+  sub3: vSub3,
+  subAll: vSubAll,
+  mag: vMag,
+  normal: vNormal,
+  scale: vScale,
+  towards: vTowards,
+  lerp: vLerp,
+  norm: vNorm,
+  mId: mId,
+  createMatrix: vCreateMatrix,
+  transform: vTransform,
+  mCompose: mCompose,
+  mRotate: mRotate,
+  mTranslate: mTranslate,
+  mScale: mScale,
+  mShear: mShear,
+  rotate: vRotate,
+  rotatePointAround: vRotatePointAround,
+  midpoint: vMidpoint,
+  angle: vAngle,
+  alongAngle: vAlongAngle,
+  fastDist: vFastDist,
+  dist: vDist,
+  dot: vDot,
+  det: vDet
+};
+
+/* start exports */
+exports.default = vec;
+exports.vec = vec;
+exports.vAdd = vAdd;
+exports.vAdd3 = vAdd3;
+exports.vAddAll = vAddAll;
+exports.vSub = vSub;
+exports.vSub3 = vSub3;
+exports.vSubAll = vSubAll;
+exports.vMag = vMag;
+exports.vNormal = vNormal;
+exports.vScale = vScale;
+exports.vTowards = vTowards;
+exports.vLerp = vLerp;
+exports.vNorm = vNorm;
+exports.mId = mId;
+exports.vCreateMatrix = vCreateMatrix;
+exports.vTransform = vTransform;
+exports.mCompose = mCompose;
+exports.mRotate = mRotate;
+exports.mTranslate = mTranslate;
+exports.mScale = mScale;
+exports.mShear = mShear;
+exports.vRotate = vRotate;
+exports.vRotatePointAround = vRotatePointAround;
+exports.vMidpoint = vMidpoint;
+exports.vAngle = vAngle;
+exports.vAlongAngle = vAlongAngle;
+exports.vFastDist = vFastDist;
+exports.vDist = vDist;
+exports.vDot = vDot;
+exports.vDet = vDet;
+/* end exports */
+},{}],"node_modules/asc-engine/src/Animation.js":[function(require,module,exports) {
+const {vAdd} = require('vec-la-fp');
+
+class Animation {
+  constructor(timeline, animationLength, pos, times = 1, loop = false) {
+    this.timeline = timeline;
+    this.active = false;
+    this.pos = pos;
+    this.frame = 0;
+    this.animationLength = animationLength;
+    this.loop = loop;
+    this.times = times;
+    this.onComplete = null;
+  }
+
+  start() {
+    this.active = true;
+  }
+
+  stop() {
+    this.active = false;
+  }
+
+  reset() {
+    this.active = false;
+    this.frame = 0;
+  }
+
+  draw(game, tileToScreen) {
+    if (this.active) {
+      const ai = Math.floor(this.frame / (this.animationLength / (this.timeline.length * this.times))) % this.timeline.length;
+
+      const frame = this.timeline[ai];
+      frame.forEach(({tile, pos}) => {
+        const screenPos = tileToScreen(vAdd(pos, this.pos));
+        game.renderer.drawTile(tile, screenPos);
+      });
+
+      this.frame++;
+      if (this.frame >= this.animationLength) {
+        if (this.loop) {
+          this.frame = 0;
+        } else {
+          this.reset();
+          if (typeof this.onComplete === 'function') {
+            this.onComplete();
+          }
+        }
+      }
+    }
+  }
+
+  clone() {
+    return new Animation(
+      this.timeline,
+      this.animationLength,
+      this.pos,
+      this.loop
+    );
+  }
+}
+
+module.exports = Animation;
+
+},{"vec-la-fp":"node_modules/asc-engine/node_modules/vec-la-fp/dist/vec.module.js"}],"node_modules/asc-engine/src/Area.js":[function(require,module,exports) {
+const {posToGridIndex, posFromGridIndex, fromify} = require('./util');
+
+class Area {
+  constructor(width, height, offset, size) {
+    this.width = width;
+    this.height = height;
+    this.offset = offset;
+    this.size = size;
+
+    this.grid = [];
+
+    this.actors = [];
+
+    this.items = [];
+
+    this.handlers = {};
+  }
+
+  setGrid(grid) {
+    this.grid = grid;
+  }
+
+  setGridAtPos(tile, pos) {
+    const i = posToGridIndex(pos, this.width);
+    if (i >= this.grid.length) {
+      throw new RangeError(`Can't set out of range index ${i} (${x}, ${y}) on grid with only ${this.grid.length} tiles`);
+    }
+    this.grid[i] = tile;
+  }
+
+  iterateGridIn2d(fn) {
+    this.grid.forEach((t, i) => {
+      const pos = posFromGridIndex(i, this.width, this.height);
+      fn(t, pos);
+    });
+  }
+}
+
+Area.from = fromify(Area);
+
+module.exports = Area;
+
+},{"./util":"node_modules/asc-engine/src/util.js"}],"node_modules/asc-engine/src/GameState.js":[function(require,module,exports) {
 class GameState {
   constructor() {
     this.state = {};
@@ -432,32 +863,25 @@ class Input {
   constructor() {
     this.keyStates = {};
     const keydownHandler = e => {
-      if (!this.keyStates[e.key]) {
-        this.keyStates[e.key] = {
-          state: true,
-          downThisFrame: true,
-          upThisFrame: false
-        };
-        return;
+      if (this.keyStates[e.key] && !this.keyStates[e.key].lock) {
+        if (!this.keyStates[e.key]) {
+          this.keyStates[e.key] = {
+            state: true,
+            downThisFrame: true,
+            upThisFrame: false,
+            lock: true
+          };
+          return;
+        }
+        this.keyStates[e.key].lock = true;
+        this.keyStates[e.key].state = true;
+        this.keyStates[e.key].downThisFrame = true;
       }
-
-      this.keyStates[e.key].state = true;
-      this.keyStates[e.key].downThisFrame = true;
-      this.keyStates[e.key].upThisFrame = false;
     };
 
     const keyupHandler = e => {
-      if (!this.keyStates[e.key]) {
-        this.keyStates[e.key] = {
-          state: false,
-          downThisFrame: false,
-          upThisFrame: true
-        };
-        return;
-      }
-
+      this.keyStates[e.key].lock = false;
       this.keyStates[e.key].state = false;
-      this.keyStates[e.key].downThisFrame = false;
       this.keyStates[e.key].upThisFrame = true;
     };
 
@@ -483,11 +907,11 @@ class Input {
   }
 
   keyPressed(key) {
-    return this.keyIsDown(key) && this.keyStates.downThisFrame;
+    return this.keyIsDown(key) && this.keyStates[key].downThisFrame;
   }
 
   keyReleased(key) {
-    return !this.keyIsDown(key) && this.keyStates.upThisFrame;
+    return !this.keyIsDown(key) && this.keyStates[key].upThisFrame;
   }
 
   update() {
@@ -640,13 +1064,62 @@ class Renderer {
 
 module.exports = Renderer;
 
-},{"./util":"node_modules/asc-engine/src/util.js"}],"node_modules/asc-engine/src/Game.js":[function(require,module,exports) {
+},{"./util":"node_modules/asc-engine/src/util.js"}],"node_modules/asc-engine/src/Time.js":[function(require,module,exports) {
+const FRAME_TIME = 16.666667;
+
+class Time {
+  constructor() {
+    this.tracks = {};
+    this.trackKeys = [];
+  }
+
+  update() {
+    const now = Date.now();
+    this.trackKeys.forEach(k => {
+      this.tracks[k].deltaTime += now - this.tracks[k].lastTime;
+      this.tracks[k].lastTime = Date.now();
+    });
+  }
+
+  computeKeys() {
+    this.trackKeys = Object.keys(this.tracks);
+  }
+
+  updateFrames(name, frames) {
+    this.tracks[name].wait = frames * FRAME_TIME;
+  }
+
+  track(name, frames) {
+    this.tracks[name] = {
+      deltaTime: 0,
+      lastTime: Date.now(),
+      wait: frames * FRAME_TIME
+    };
+    this.computeKeys();
+  }
+
+  untrack(name) {
+    delete this.tracks[name];
+    this.computeKeys();
+  }
+
+  ifReady(name, fn) {
+    if (this.tracks[name].deltaTime >= this.tracks[name].wait) {
+      this.tracks[name].deltaTime = 0;
+      fn();
+    }
+  }
+}
+
+module.exports = Time;
+},{}],"node_modules/asc-engine/src/Game.js":[function(require,module,exports) {
 const {vAdd, vScale} = require('vec-la-fp');
 
 const GameState = require('./GameState');
 const Input = require('./Input');
 const PubSub = require('./PubSub');
 const Renderer = require('./Renderer');
+const Time = require('./Time');
 const {posToGridIndex} = require('./util');
 
 class Game {
@@ -659,12 +1132,12 @@ class Game {
     this.renderer = new Renderer(canvas, canvasWidth, canvasHeight);
 
     this.area = null;
+    this.time = new Time();
+    this.time.track('@@FRAMES', 1);
 
     this.input = new Input();
     this.state = new GameState();
 
-    this.deltaTime = 0;
-    this.lastTime = Date.now();
     this.frames = 0;
     this.boundDraw = this.draw.bind(this);
 
@@ -694,9 +1167,8 @@ class Game {
   }
 
   draw() {
-    this.deltaTime += Date.now() - this.lastTime;
-    if (this.deltaTime >= 16) {
-      this.deltaTime = 0;
+    this.time.update();
+    this.time.ifReady('@@FRAMES', () => {
       this.frames++;
 
       this.publish('@@FRAME_BEFORE_UPDATE');
@@ -708,11 +1180,9 @@ class Game {
       this.publish('@@FRAME_BEFORE_RENDER_COMMIT');
       this.renderer.commit();
 
-      // Reset the frame values for input
       this.input.update();
-
       this.publish('@@FRAME_COMPLETE');
-    }
+    });
 
     requestAnimationFrame(this.boundDraw);
   }
@@ -720,133 +1190,18 @@ class Game {
 
 module.exports = Game;
 
-},{"vec-la-fp":"node_modules/vec-la-fp/dist/vec.module.js","./GameState":"node_modules/asc-engine/src/GameState.js","./Input":"node_modules/asc-engine/src/Input.js","./PubSub":"node_modules/asc-engine/src/PubSub.js","./Renderer":"node_modules/asc-engine/src/Renderer.js","./util":"node_modules/asc-engine/src/util.js"}],"node_modules/asc-engine/src/Area.js":[function(require,module,exports) {
-const {posToGridIndex, fromify} = require('./util');
+},{"vec-la-fp":"node_modules/asc-engine/node_modules/vec-la-fp/dist/vec.module.js","./GameState":"node_modules/asc-engine/src/GameState.js","./Input":"node_modules/asc-engine/src/Input.js","./PubSub":"node_modules/asc-engine/src/PubSub.js","./Renderer":"node_modules/asc-engine/src/Renderer.js","./Time":"node_modules/asc-engine/src/Time.js","./util":"node_modules/asc-engine/src/util.js"}],"node_modules/asc-engine/src/index.js":[function(require,module,exports) {
+module.exports = {
+  AnimatedTile: require('./AnimatedTile'),
+  Animation: require('./Animation'),
+  Area: require('./Area'),
+  constants: require('./constants'),
+  Game: require('./Game'),
+  Tile: require('./Tile'),
+  util: require('./util')
+};
 
-class Area {
-  constructor(width, height, offset, size) {
-    this.width = width;
-    this.height = height;
-    this.offset = offset;
-    this.size = size;
-
-    this.grid = [];
-
-    this.actors = [];
-
-    this.items = [];
-
-    this.handlers = {};
-  }
-
-  setGrid(grid) {
-    this.grid = grid;
-  }
-
-  setGridAtPos(tile, pos) {
-    const i = posToGridIndex(pos, this.width);
-    if (i >= this.grid.length) {
-      throw new RangeError(`Can't set out of range index ${i} (${x}, ${y}) on grid with only ${this.grid.length} tiles`);
-    }
-    this.grid[i] = tile;
-  }
-}
-
-Area.from = fromify(Area);
-
-module.exports = Area;
-
-},{"./util":"node_modules/asc-engine/src/util.js"}],"node_modules/asc-engine/src/Tile.js":[function(require,module,exports) {
-const {fromify} = require('./util');
-const {LAYERS} = require('./constants');
-
-class Tile {
-  constructor(char, color, zPos = LAYERS.BG) {
-    this.char = char;
-    this.color = color;
-    this.zPos = zPos;
-    this.properties = [];
-  }
-
-  hasProperty(prop) {
-    return this.properties.includes(prop);
-  }
-
-  addProperty(prop) {
-    this.properties.push(prop);
-    return this;
-  }
-}
-
-Tile.from = fromify(Tile);
-
-module.exports = Tile;
-
-},{"./util":"node_modules/asc-engine/src/util.js","./constants":"node_modules/asc-engine/src/constants.js"}],"node_modules/asc-engine/src/Animation.js":[function(require,module,exports) {
-const {vAdd} = require('vec-la-fp');
-
-class Animation {
-  constructor(timeline, animationLength, pos, times = 1, loop = false) {
-    this.timeline = timeline;
-    this.active = false;
-    this.pos = pos;
-    this.frame = 0;
-    this.animationLength = animationLength;
-    this.loop = loop;
-    this.times = times;
-    this.onComplete = null;
-  }
-
-  start() {
-    this.active = true;
-  }
-
-  stop() {
-    this.active = false;
-  }
-
-  reset() {
-    this.active = false;
-    this.frame = 0;
-  }
-
-  draw(game, tileToScreen) {
-    if (this.active) {
-      const ai = Math.floor(this.frame / (this.animationLength / (this.timeline.length * this.times))) % this.timeline.length;
-
-      const frame = this.timeline[ai];
-      frame.forEach(({tile, pos}) => {
-        const screenPos = tileToScreen(vAdd(pos, this.pos));
-        game.renderer.drawTile(tile, screenPos);
-      });
-
-      this.frame++;
-      if (this.frame >= this.animationLength) {
-        if (this.loop) {
-          this.frame = 0;
-        } else {
-          this.reset();
-          if (typeof this.onComplete === 'function') {
-            this.onComplete();
-          }
-        }
-      }
-    }
-  }
-
-  clone() {
-    return new Animation(
-      this.timeline,
-      this.animationLength,
-      this.pos,
-      this.loop
-    );
-  }
-}
-
-module.exports = Animation;
-
-},{"vec-la-fp":"node_modules/vec-la-fp/dist/vec.module.js"}],"index.js":[function(require,module,exports) {
+},{"./AnimatedTile":"node_modules/asc-engine/src/AnimatedTile.js","./Animation":"node_modules/asc-engine/src/Animation.js","./Area":"node_modules/asc-engine/src/Area.js","./constants":"node_modules/asc-engine/src/constants.js","./Game":"node_modules/asc-engine/src/Game.js","./Tile":"node_modules/asc-engine/src/Tile.js","./util":"node_modules/asc-engine/src/util.js"}],"index.js":[function(require,module,exports) {
 function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _nonIterableRest(); }
 
 function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance"); }
@@ -858,21 +1213,17 @@ function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
 var _require = require('vec-la-fp'),
     vAdd = _require.vAdd;
 
-var _require2 = require('asc-engine/src/constants'),
-    LAYERS = _require2.LAYERS;
-
-var _require3 = require('asc-engine/src/util'),
-    posFromGridIndex = _require3.posFromGridIndex;
-
-var Game = require('asc-engine/src/Game');
-
-var Area = require('asc-engine/src/Area');
-
-var Tile = require('asc-engine/src/Tile');
-
-var Animation = require('asc-engine/src/Animation');
+var _require2 = require('asc-engine'),
+    Game = _require2.Game,
+    Area = _require2.Area,
+    Tile = _require2.Tile,
+    Animation = _require2.Animation,
+    LAYERS = _require2.constants.LAYERS;
 
 var game = new Game('main', 1000, 700);
+var renderer = game.renderer,
+    time = game.time,
+    input = game.input;
 var toGameArea = game.createScreenRegion([19 * 20, 4 * 20], function () {
   return game.area.size;
 });
@@ -906,9 +1257,6 @@ var createLineAnimation = function createLineAnimation(y) {
 };
 
 var animations = [];
-var FRAME_TIME = 16.6;
-var lastTime = Date.now();
-var currentTime = lastTime;
 
 var moduloAddition = function moduloAddition(a, b, c) {
   if (b < 0) {
@@ -944,22 +1292,6 @@ var gameState = Array.from({
     length: PAW
   });
 });
-var keyStates = {};
-
-var lockedKeyAction = function lockedKeyAction(key, action) {
-  if (game.input.keyIsDown(key) && !keyStates[key]) {
-    keyStates[key] = true;
-    action();
-  }
-};
-
-var updateLockStates = function updateLockStates() {
-  Object.keys(keyStates).forEach(function (ks) {
-    if (!game.input.keyIsDown(ks)) {
-      keyStates[ks] = false;
-    }
-  });
-};
 
 var checkCollision = function checkCollision(pos, state) {
   var collision = {
@@ -987,66 +1319,54 @@ var checkCollision = function checkCollision(pos, state) {
   return collision;
 };
 
-game.onUpdate = function () {
-  var mLeft, mRight, rLeft, rRight;
-  lockedKeyAction('z', function () {
-    return rLeft = true;
-  });
-  lockedKeyAction('x', function () {
-    return rRight = true;
-  });
-  lockedKeyAction('ArrowLeft', function () {
-    return mLeft = true;
-  });
-  lockedKeyAction('ArrowRight', function () {
-    return mRight = true;
-  });
-  updateLockStates();
+time.track('falling cycle', 60);
 
-  if (mLeft) {
-    var nextPos = vAdd(instance.pos, [-1, 0]);
-    var collision = checkCollision(nextPos, instance.state);
+game.onUpdate = function () {
+  // Rotational inputs
+  if (input.keyPressed('z')) {
+    var nextState = moduloAddition(instance.state, -1, instance.piece.length);
+    var collision = checkCollision(instance.pos, nextState);
 
     if (!collision.blocked) {
-      instance.pos = nextPos;
-    }
-  } else if (mRight) {
-    var _nextPos = vAdd(instance.pos, [1, 0]);
-
-    var _collision = checkCollision(_nextPos, instance.state);
-
-    if (!_collision.blocked) {
-      instance.pos = _nextPos;
-    }
-  } else if (rLeft) {
-    var nextState = moduloAddition(instance.state, -1, instance.piece.length);
-
-    var _collision2 = checkCollision(instance.pos, nextState);
-
-    if (!_collision2.blocked) {
       instance.state = nextState;
     }
-  } else if (rRight) {
+  } else if (input.keyPressed('x')) {
     var _nextState = moduloAddition(instance.state, 1, instance.piece.length);
 
-    var _collision3 = checkCollision(instance.pos, _nextState);
+    var _collision = checkCollision(instance.pos, _nextState);
+
+    if (!_collision.blocked) {
+      instance.state = _nextState;
+    }
+  } // Positional inputs
+
+
+  if (input.keyPressed('ArrowLeft')) {
+    var nextPos = vAdd(instance.pos, [-1, 0]);
+
+    var _collision2 = checkCollision(nextPos, instance.state);
+
+    if (!_collision2.blocked) {
+      instance.pos = nextPos;
+    }
+  } else if (input.keyPressed('ArrowRight')) {
+    var _nextPos = vAdd(instance.pos, [1, 0]);
+
+    var _collision3 = checkCollision(_nextPos, instance.state);
 
     if (!_collision3.blocked) {
-      instance.state = _nextState;
+      instance.pos = _nextPos;
     }
   }
 
-  var rate = game.input.keyIsDown('ArrowDown') ? 5 : 30;
-  currentTime = Date.now();
-
-  if (currentTime - lastTime >= FRAME_TIME * rate) {
-    lastTime = currentTime;
-    score.update(30 / rate);
+  var rate = input.keyIsDown('ArrowDown') ? 5 : 60;
+  time.updateFrames('falling cycle', rate);
+  time.ifReady('falling cycle', function () {
+    score.update(60 / rate);
     instance.pos = vAdd(instance.pos, [0, 1]);
+    var collision = checkCollision(instance.pos, instance.state);
 
-    var _collision4 = checkCollision(instance.pos, instance.state);
-
-    if (_collision4.blocked) {
+    if (collision.blocked) {
       instance.piece[instance.state].forEach(function (row, y) {
         row.forEach(function (cell, x) {
           if (cell === 1) {
@@ -1069,7 +1389,7 @@ game.onUpdate = function () {
 
       if (filled) {
         gameState.splice(i, 1);
-        var ani = createLineAnimation(i - lines);
+        var ani = createLineAnimation(i);
         ani.start();
         animations.push(ani);
         lines++;
@@ -1098,52 +1418,47 @@ game.onUpdate = function () {
         });
       });
     }
-  }
+  });
 
-  for (var _i3 = animations.length - 1; _i3 >= 0; _i3--) {
-    if (!animations[_i3].active) {
-      animations.splice(_i3, 1);
-      continue;
+  for (var i = animations.length - 1; i >= 0; i--) {
+    if (!animations[i].active) {
+      animations.splice(i, 1);
     }
   }
 };
 
 game.onDraw = function () {
-  var _this = this;
-
-  this.renderer.clearBackground('#000000');
-  this.renderer.setTileSize(this.area.size);
-  this.area.grid.forEach(function (t, i) {
-    var pos = toGameArea(posFromGridIndex(i, _this.area.width, _this.area.height));
-
-    _this.renderer.drawTile(t, pos);
+  renderer.clearBackground('#000000');
+  renderer.setTileSize(game.area.size);
+  game.area.iterateGridIn2d(function (t, pos) {
+    renderer.drawTile(t, toGameArea(pos));
   });
   instance.piece[instance.state].forEach(function (row, y) {
     row.forEach(function (cell, x) {
       if (cell === 1) {
         var pos = toGameArea(vAdd(instance.pos, [x, y]));
-        game.renderer.drawTile(instance.tile, pos);
+        renderer.drawTile(instance.tile, pos);
       }
     });
   });
   gameState.forEach(function (row, y) {
     return row.forEach(function (tile, x) {
-      if (tile) game.renderer.drawTile(tile, toGameArea([x + 1, y]));
+      if (tile) renderer.drawTile(tile, toGameArea([x + 1, y]));
     });
   });
   nextPiece[0].forEach(function (row, y) {
     row.forEach(function (cell, x) {
       if (cell === 1) {
         var pos = toGameArea(vAdd([20, 5], [x, y]));
-        game.renderer.drawTile(nextTile, pos);
+        renderer.drawTile(nextTile, pos);
       }
     });
   });
   animations.forEach(function (a) {
     return a.draw(game, toGameArea);
   });
-  game.renderer.drawTile(title, toTitleArea([1, 1]));
-  game.renderer.drawTile(score, toScoreArea([0, 1]));
+  renderer.drawTile(title, toTitleArea([1, 1]));
+  renderer.drawTile(score, toScoreArea([0, 1]));
 };
 
 var S = Tile.from('#', '#999999');
@@ -1154,7 +1469,7 @@ var gameArea = new Area(PAW + 2, PAH + 2, [0, 0], 25);
 gameArea.setGrid(tiles);
 game.setCurrentArea(gameArea);
 game.start();
-},{"vec-la-fp":"node_modules/vec-la-fp/dist/vec.module.js","asc-engine/src/constants":"node_modules/asc-engine/src/constants.js","asc-engine/src/util":"node_modules/asc-engine/src/util.js","asc-engine/src/Game":"node_modules/asc-engine/src/Game.js","asc-engine/src/Area":"node_modules/asc-engine/src/Area.js","asc-engine/src/Tile":"node_modules/asc-engine/src/Tile.js","asc-engine/src/Animation":"node_modules/asc-engine/src/Animation.js"}],"node_modules/parcel/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"vec-la-fp":"node_modules/vec-la-fp/dist/vec.module.js","asc-engine":"node_modules/asc-engine/src/index.js"}],"node_modules/parcel/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -1181,7 +1496,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "57768" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "57454" + '/');
 
   ws.onmessage = function (event) {
     var data = JSON.parse(event.data);
